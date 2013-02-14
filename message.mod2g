@@ -1,0 +1,17 @@
+module message[exit=always] {
+	program {		
+		% we still need to translate these messages.
+		if bel(received(Agt,Mess), translate(Agt,Mess,Transl), strjoin([Agt, ' says'],WhoSays)) 
+			then sendToGUI(WhoSays,Transl)+delete(received(Agt,Mess)).
+
+		% note, translate requires sender of message that is, me) as agent.
+		if bel(performSendMessage(all, Mess), me(Me), translate(Me,Mess,Transl)) 
+			then send(allother, Mess) + sendToGUI('I say',Transl) + delete(performSendMessage(all, Mess)).
+	}
+	actionspec {
+		sendToGUI(Sender,Message) {
+			pre { true }
+			post { }
+		}	
+	} 
+}
