@@ -1,0 +1,58 @@
+I.1
+Runs robot:
+Run 1:
+A2, B2, C1, B2, B1, C3, B1, B3, C2, B2, A1, A3.
+
+Run 2:
+C2, A2, B3, C3, A1, A3, B1, A3, A1, A2, A1, B2.
+
+Run 3:
+A3, C3, A3, C2, B2, B1, A1, A2, C3, A2, B2, C1.
+
+I.2
+Line numbers 46-47
+First line generates a goal for every possible next location
+Second line chooses one of those goals and sets it as the next location to go to
+
+Together with prolog instantiation of variables and the a-goal predicate the running program (randomly) selects one of the goals as the next location to go to
+
+
+??QUESTION: a-goal: deterministisch?
+??QUESTION: in($huidigeKamer) niet in beliefs? -> 2 keer na elkaar zelfde kamer?
+
+I.3
+Robot percepts the information of the entire maze and processes them to beliefs.
+Searches which room it is in.
+Generates all possible goals.
+Uses line 47 to select the next location to go to.
+Processes all percepted information while going to the next location.
+
+I.4
+Based on the current state the next action can be decided. Possible states are: 'unknown', 'travelling', 'arrived' and 'collided'.
+Every time the main module is executed, goTo is called. The preconditions enforce that new locations can only be chosen when a robot is waiting inside a room, or waiting in front of an occupied room.
+In the event module percepts of state updates are used to update the beliefs.
+A robot doesn't know where it is at startup before it has percepted its environment, and is thus in the 'unknown' state.
+
+I.5
+The knowledge of the rooms (line 6) enforces the names of the valid rooms. 
+Only rooms that are in the conjunction of these names in the knowledge base and the percepted places on the map will be visited.
+Thus, arbitrary maps are allowed, but limit the movement options of the robot(s).
+
+I.6
+a)
+The colored blocks represent assets that should be retrieved with a certain priority.
+The searching element focuses on locating the blocks in their respective rooms. 
+The rescue component then consists of moving them in the correct color order to the DropZone.
+A robot is the agent performing this search and rescue operation.
+
+b)
+The analogy fails on the following points:
+- The entire map of possible rooms is known at startup, something not always possible in practical search and rescue cases.
+- The priority of rescue tasks is set up front and doesn't change. Real-world examples of course have no such luxury to be able to predetermine the entire operation.
+- The world is completely static and is thus only influenced by explicit actions of the robot(s). Again, not very realistic.
+
+I.7
+A possible performance characteristic could be minimizing the amount of so-called 'misses'. 
+A miss could be defined as entering a room without picking up a block, putting down a block anywhere other than the DropZone,
+waiting until a room is no longer occupied or starting a path without actually ending up in the target room.
+Other options are counting the total number of visited rooms, the average distance travelled per route taken, ...
