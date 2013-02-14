@@ -6,7 +6,7 @@ environment{
 
 agentfiles{
 	% insert (list of) agent file references below.
-	"robot.goal" [name = robot] .
+	"robot(1).goal" [name = robot] .
 }
 
 launchpolicy{

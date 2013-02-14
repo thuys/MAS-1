@@ -1,0 +1,35 @@
+init module {
+	knowledge{
+		% insert knowledge here, if any, or remove section.
+	}
+	
+	beliefs{
+		% insert initial beliefs here, if any, or remove section.
+	}
+	
+	goals{
+		% insert initial goals here, if any, or remove section.
+	}
+	
+	program {
+        % insert one-time rules here, or remove section
+    }
+	
+	actionspec{
+		% insert global action specification here, if any, or remove section.
+	}
+}
+	
+main module{
+	program{
+		% insert action rules here.
+	}
+}
+
+event module{
+	program{
+		% insert action rules here.
+	}
+}
+
+% insert additional modules, if any, here.
