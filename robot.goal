@@ -10,6 +10,8 @@ init module {
 		room(X):- rooms(L), member(X,L).
 		
 		% Assignment II.2: insert a definition of the predicate "nextColorInSeq(Color)".
+		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).
+		
 	}
 	
 	beliefs{
@@ -74,8 +76,6 @@ event module{
 
 		if bel(not(state(_)), percept(state(State))) then insert(state(State)).		
 		if bel(state(OldState), percept(state(State)) ) then insert(not(state(OldState)), state(State)).
-				
-		% Assignment II.1b: insert percept rules for handling percepts sent on change.
 		
 		if bel(percept(occupied(Room))) then insert(occupied(Room)). 
 		if bel(percept(not(occupied(Room)))) then insert(not(occupied(Room))). 
