@@ -3,6 +3,7 @@ init module {
 		% Hardcoded list of all rooms in the maps we use for the BW4T environment.
 		% Note that room names are strings (to avoid that names with capitals are treated as variables).
 		
+		% TODO: niet hardcoden (zet in program)
 		rooms(['RoomA1','RoomA2','RoomA3','RoomB1','RoomB2','RoomB3','RoomC1','RoomC2','RoomC3']).
 
 		% Predicate room(X) holds if X is a room.
@@ -75,6 +76,24 @@ event module{
 		if bel(state(OldState), percept(state(State)) ) then insert(not(state(OldState)), state(State)).
 				
 		% Assignment II.1b: insert percept rules for handling percepts sent on change.
+		
+		if bel(percept(occupied(Room))) then insert(occupied(Room)). 
+		if bel(percept(not(occupied(Room)))) then insert(not(occupied(Room))). 
+		
+		% Color in a room
+		
+		%TODO: Verwijder alle kleuren van de kamer + mss nog controleren met atBlock
+		% forall bel(color(Room,BlockID, ColourID), percept(at(Room))) do insert(not(color(Room,BlockID, ColourID))).
+		
+		forall bel(percept(color(BlockID, ColourID)), at(Room)) do insert(color(Room,BlockID, ColourID)).
+		
+		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
+		if bel(percept(not(holding(BlockID)))) then insert(not(holding(BlockID))).
+		
+		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)).
+		if bel(percept(not(sequenceIndex(ColourID)))) then insert(not(sequenceIndex(ColourID))).
+		
+		% Atblock
 		
 		%%%%%%%%%%%%%%%%%% sending messages and processing received messages %%%%%%%%%%%%%%%%%%%%
 		% (Optional) Assignment III.5b: insert one or more rule(s) for messages sent by other agents.
