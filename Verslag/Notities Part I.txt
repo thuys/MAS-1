@@ -18,7 +18,9 @@ Together with prolog instantiation of variables and the a-goal predicate the run
 
 
 ??QUESTION: a-goal: deterministisch?
+?? A: Om te zorgen dat het niet in 1 specifiek scenario werkt worden goals randomly geselecteerd achter de schermen door a-goal
 ??QUESTION: in($huidigeKamer) niet in beliefs? -> 2 keer na elkaar zelfde kamer?
+?? A: NO F*CKING CLUE.
 
 I.3
 Robot percepts the information of the entire maze and processes them to beliefs.
