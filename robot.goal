@@ -2,6 +2,7 @@ init module {
 	knowledge{
 		% Hardcoded list of all rooms in the maps we use for the BW4T environment.
 		% Note that room names are strings (to avoid that names with capitals are treated as variables).
+		
 		rooms(['RoomA1','RoomA2','RoomA3','RoomB1','RoomB2','RoomB3','RoomC1','RoomC2','RoomC3']).
 
 		% Predicate room(X) holds if X is a room.
@@ -17,6 +18,13 @@ init module {
 	program{
 		% Assignment II.1a: insert here rules for processing percepts sent only at the beginning of a session.
 		forall bel(percept(place(R))) do insert(place(R)).
+		
+		forall bel(percept(ownName(X))) do insert(ownName(X)).
+		
+		forall bel(percept(navpoint(Nb, Room, X, Y, Neightbours))) do insert(navpoint(Nb, Room, X, Y, Neightbours)).
+		
+		forall bel(percept(sequence(Colours))) do insert(sequence(Colours)).
+		
 	}
 		
 	actionspec{	
