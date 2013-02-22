@@ -28,6 +28,7 @@ init module {
 		
 		forall bel(percept(sequence(Colours))) do insert(sequence(Colours)).
 		
+		forall bel(place(Place), room(Place)) do adopt(at(Place)).
 	}
 		
 	actionspec{	
@@ -49,7 +50,7 @@ init module {
 		
 		% Assignment II.3b: insert a specification for the pickUp action.
 		% TODO: post condities...
-		pickup {
+		pickUp {
             pre { atBlock(BlockID), not(holding(_)), state(arrived) }
 			post { true }
 		}
@@ -66,9 +67,11 @@ init module {
 
 main module{
 	program {
+		% TODO: in verschillende module! 
+		if bel(color(Room, BlockID, ColourID), (nextColorInSeq(ColourID))) then pickupBlock.
+		
 		% Initial code.
-		if bel(place(Place), room(Place)) then adopt(in(Place)).
-		if a-goal(in(Place)) then goTo(Place).
+		if a-goal(at(Place)) then goTo(Place).
 		
 		% Assignment II.5: improve the two lines of code above such that the agent 
 		%   checks the rooms in a more efficient way (not checking the same room 
@@ -109,14 +112,53 @@ event module{
 		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)).
 		if bel(percept(not(sequenceIndex(ColourID)))) then insert(not(sequenceIndex(ColourID))).
 		
+		
 		% Atblock
+		if bel(not(atBlock(_)), percept(atBlock(Place))) then insert(atBlock(Place)).
+		if bel(atBlock(OldPlace), percept(atBlock(Place))) then insert(not(atBlock(OldPlace)),atBlock(Place)).
+		
 		
 		%%%%%%%%%%%%%%%%%% sending messages and processing received messages %%%%%%%%%%%%%%%%%%%%
 		% (Optional) Assignment III.5b: insert one or more rule(s) for messages sent by other agents.
 		% The following rule is an example of how to process a message containing a block ID.
+		
 		forall bel(received(Sender, block(Id))) do insert(block(Id)) + delete(received(Sender, block(Id))).
 		
 		% (Optional) Assignment III.5a: insert send-actions to implement the communication
 		%    of your choice (may be implemented here or in the event module)
+	}
+}
+
+module pickupBlock{
+	
+%	goals {
+%		color(Room, _, ColourID), nextColorInSeq(ColourID), at(Room).
+%		% color(Room, BlockID, ColourID), nextColorInSeq(ColourID), holding(BlockID).
+%		
+%		
+%		
+%	}
+	
+	program {
+		% Droppen in dropzone
+		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), at('DropZone')) then putDown + drop(color('DropZone', BlockID, ColourID)).
+		
+		
+		% rijden in dropzone
+		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), not(at('DropZone'))) then goTo('DropZone').
+		
+		% oppicken
+		if a-goal(color('DropZone', BlockID, ColourID)), bel(not(holding(BlockID)), atBlock(BlockID), color(Room, BlockID, ColourID)) then pickUp.
+		
+		% rijden naar block
+		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), at(Room), not(atBlock(BlockID))) then goToBlock(BlockID).
+		
+		% rijden naar kamer
+		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), not(at(Room))) then goTo(Room).
+		
+		% Goal toevoegen	
+		
+		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID), Room \= 'DropZone') then adopt(color('DropZone', BlockID, ColourID)).
+		
 	}
 }
