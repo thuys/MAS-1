@@ -138,27 +138,37 @@ module pickupBlock{
 %		
 %		
 %	}
-	
+
 	program {
-		% Droppen in dropzone
-		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), at('DropZone')) then putDown + drop(color('DropZone', BlockID, ColourID)).
+		if a-goal(at(Room) , nextColorInSeq(ColourID)), bel(nextColorInSeq(ColourID)) then goTo(Room).
 		
+		if a-goal(atBlock(BlockID)) then goToBlock(BlockID).
 		
-		% rijden in dropzone
-		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), not(at('DropZone'))) then goTo('DropZone').
+		if a-goal(holding(BlockID)) then pickUp.
 		
-		% oppicken
-		if a-goal(color('DropZone', BlockID, ColourID)), bel(not(holding(BlockID)), atBlock(BlockID), color(Room, BlockID, ColourID)) then pickUp.
-		
-		% rijden naar block
-		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), at(Room), not(atBlock(BlockID))) then goToBlock(BlockID).
-		
-		% rijden naar kamer
-		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), not(at(Room))) then goTo(Room).
-		
-		% Goal toevoegen	
-		
-		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID), Room \= 'DropZone') then adopt(color('DropZone', BlockID, ColourID)).
-		
+		% Zoeken van de huidige block
+		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)) then adopt(at(Room), nextColorInSeq(ColourID)) + adopt(atBlock(BlockID)) + adopt(holding(BlockID)).
 	}
+%	program {
+%		% Droppen in dropzone
+%		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), at('DropZone')) then putDown + drop(color('DropZone', BlockID, ColourID)).
+%		
+%		
+%		% rijden in dropzone
+%		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), not(at('DropZone'))) then goTo('DropZone').
+%		
+%		% oppicken
+%		if a-goal(color('DropZone', BlockID, ColourID)), bel(not(holding(BlockID)), atBlock(BlockID), color(Room, BlockID, ColourID)) then pickUp.
+%		
+%		% rijden naar block
+%		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), at(Room), not(atBlock(BlockID))) then goToBlock(BlockID).
+%		
+%		% rijden naar kamer
+%		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), not(at(Room))) then goTo(Room).
+%		
+%		% Goal toevoegen	
+%		
+%		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID), Room \= 'DropZone') then adopt(color('DropZone', BlockID, ColourID)).
+		
+%	}
 }
