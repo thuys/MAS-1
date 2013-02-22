@@ -58,3 +58,9 @@ A possible performance characteristic could be minimizing the amount of so-calle
 A miss could be defined as entering a room without picking up a block, putting down a block anywhere other than the DropZone,
 waiting until a room is no longer occupied or starting a path without actually ending up in the target room.
 Other options are counting the total number of visited rooms, the average distance travelled per route taken, ...
+
+
+II.4
+Using the original codebase, the first cycles uses the adopt function to place the goals. 
+As these are never fulfilled, no goals get deleted, and the robot keeps looping over all locations.
+Goals can be deleted in two ways: Automatically by just fulfilling the goal, or by dropping them manually.
