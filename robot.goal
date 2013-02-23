@@ -44,21 +44,21 @@ init module {
 		% Assignment II.3a: insert a specification for the goToBlock(Block) action.
 		% TODO: post condities...
 		goToBlock(Block) {
-            pre { at(Room), color(Room, Block,_)  } %TODO: mss aanpassen met nextColorInSeq
-			post { true }
+            pre { state(arrived), at(Room), color(Room, Block,_)  } %TODO: mss aanpassen met nextColorInSeq
+			post { atBlock(Block), state(arrived) }
 		}
 		
 		% Assignment II.3b: insert a specification for the pickUp action.
 		% TODO: post condities...
 		pickUp {
-            pre { atBlock(BlockID), not(holding(_)), state(arrived) }
-			post { true }
+            pre { state(arrived), atBlock(BlockID), not(holding(_)), state(arrived) }
+			post { holding(BlockID) }
 		}
 		
 		% Assignment II.3c: insert a specification for the putDown action.
 		% TODO: post condities...
 		putDown {
-            pre { holding(_), state(arrived), holding(BlockID) }
+            pre { state(arrived), holding(_) }
 			post { true }
 		}
 		
@@ -67,8 +67,22 @@ init module {
 
 main module{
 	program {
-		% TODO: in verschillende module! 
-		if bel(color(Room, BlockID, ColourID), (nextColorInSeq(ColourID))) then pickupBlock.
+		% TODO: in verschillende module!
+		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))) then insert(new_target(Room, BlockID)) + adopt(atBlock(BlockID)) + adopt(at(Room)).
+		
+		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
+		
+		if a-goal(atBlock(BlockID)), bel(new_target(_,BlockID)) then adopt(holding(BlockID)).
+		if a-goal(atBlock(BlockID)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
+		
+		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
+		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then pickUp.
+		
+		if a-goal(at('DropZone')), bel(holding(BlockID), new_target(_,BlockID)) then adopt(dropBlock(BlockID)).
+		if a-goal(at('DropZone')), bel(holding(BlockID), new_target(_,BlockID)) then goTo('DropZone').
+		
+		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)) then putDown.
+		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)), not(bel(holding(BlockID))) then delete(new_target(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
 		% Initial code.
 		if a-goal(at(Place)) then goTo(Place).
@@ -105,17 +119,18 @@ event module{
 		% forall bel(color(Room,BlockID, ColourID), percept(at(Room))) do insert(not(color(Room,BlockID, ColourID))).
 		
 		forall bel(percept(color(BlockID, ColourID)), at(Room)) do insert(color(Room,BlockID, ColourID)).
+		forall bel(percept(at(Room)), color(OldRoom, BlockID, ColourID), holding(BlockID)) do delete(color(OldRoom,BlockID, ColourID)).
 		
 		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
 		if bel(percept(not(holding(BlockID)))) then insert(not(holding(BlockID))).
 		
+		if bel(percept(sequenceIndex(ColourID)), sequenceIndex(OldColorID)) then insert(not(sequenceIndex(OldColorID)), sequenceIndex(ColourID)).
 		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)).
-		if bel(percept(not(sequenceIndex(ColourID)))) then insert(not(sequenceIndex(ColourID))).
 		
 		
 		% Atblock
-		if bel(not(atBlock(_)), percept(atBlock(Place))) then insert(atBlock(Place)).
-		if bel(atBlock(OldPlace), percept(atBlock(Place))) then insert(not(atBlock(OldPlace)),atBlock(Place)).
+		if bel(not(atBlock(X))) then insert(not(atBlock(X))).
+		if bel(atBlock(Place)) then insert(atBlock(Place)).
 		
 		
 		%%%%%%%%%%%%%%%%%% sending messages and processing received messages %%%%%%%%%%%%%%%%%%%%
@@ -127,48 +142,4 @@ event module{
 		% (Optional) Assignment III.5a: insert send-actions to implement the communication
 		%    of your choice (may be implemented here or in the event module)
 	}
-}
-
-module pickupBlock{
-	
-%	goals {
-%		color(Room, _, ColourID), nextColorInSeq(ColourID), at(Room).
-%		% color(Room, BlockID, ColourID), nextColorInSeq(ColourID), holding(BlockID).
-%		
-%		
-%		
-%	}
-
-	program {
-		if a-goal(at(Room) , nextColorInSeq(ColourID)), bel(nextColorInSeq(ColourID)) then goTo(Room).
-		
-		if a-goal(atBlock(BlockID)) then goToBlock(BlockID).
-		
-		if a-goal(holding(BlockID)) then pickUp.
-		
-		% Zoeken van de huidige block
-		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)) then adopt(at(Room), nextColorInSeq(ColourID)) + adopt(atBlock(BlockID)) + adopt(holding(BlockID)).
-	}
-%	program {
-%		% Droppen in dropzone
-%		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), at('DropZone')) then putDown + drop(color('DropZone', BlockID, ColourID)).
-%		
-%		
-%		% rijden in dropzone
-%		if a-goal(color('DropZone', BlockID, ColourID)), bel(holding(BlockID), not(at('DropZone'))) then goTo('DropZone').
-%		
-%		% oppicken
-%		if a-goal(color('DropZone', BlockID, ColourID)), bel(not(holding(BlockID)), atBlock(BlockID), color(Room, BlockID, ColourID)) then pickUp.
-%		
-%		% rijden naar block
-%		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), at(Room), not(atBlock(BlockID))) then goToBlock(BlockID).
-%		
-%		% rijden naar kamer
-%		if a-goal(color('DropZone', BlockID, ColourID)), bel(color(Room, BlockID, _), not(at(Room))) then goTo(Room).
-%		
-%		% Goal toevoegen	
-%		
-%		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID), Room \= 'DropZone') then adopt(color('DropZone', BlockID, ColourID)).
-		
-%	}
 }
