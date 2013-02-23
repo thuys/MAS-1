@@ -58,8 +58,8 @@ init module {
 		% Assignment II.3c: insert a specification for the putDown action.
 		% TODO: post condities...
 		putDown {
-            pre { state(arrived), holding(_) }
-			post { true }
+            pre { state(arrived), holding(BlockID) }
+			post { not(holding(BlockID)) }
 		}
 		
 	}
@@ -68,12 +68,12 @@ init module {
 main module{
 	program {
 		% TODO: in verschillende module!
-		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))) then insert(new_target(Room, BlockID)) + adopt(atBlock(BlockID)) + adopt(at(Room)).
+		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))) then insert(new_target(Room, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(Room)).
 		
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
 		
-		if a-goal(atBlock(BlockID)), bel(new_target(_,BlockID)) then adopt(holding(BlockID)).
-		if a-goal(atBlock(BlockID)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
+		%if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then adopt(holding(BlockID)).
+		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
 		
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then pickUp.
@@ -119,19 +119,19 @@ event module{
 		% forall bel(color(Room,BlockID, ColourID), percept(at(Room))) do insert(not(color(Room,BlockID, ColourID))).
 		
 		forall bel(percept(color(BlockID, ColourID)), at(Room)) do insert(color(Room,BlockID, ColourID)).
-		forall bel(percept(at(Room)), color(OldRoom, BlockID, ColourID), holding(BlockID)) do delete(color(OldRoom,BlockID, ColourID)).
+		forall bel(percept(holding(BlockID)), percept(not(color(BlockID, ColourID))), color(Room, BlockID, ColourID)) do delete(color(Room,BlockID, ColourID)).
 		
 		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
 		if bel(percept(not(holding(BlockID)))) then insert(not(holding(BlockID))).
 		
+		
 		if bel(percept(sequenceIndex(ColourID)), sequenceIndex(OldColorID)) then insert(not(sequenceIndex(OldColorID)), sequenceIndex(ColourID)).
-		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)).
+		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)). 
 		
 		
 		% Atblock
-		if bel(not(atBlock(X))) then insert(not(atBlock(X))).
-		if bel(atBlock(Place)) then insert(atBlock(Place)).
-		
+		forall bel(percept(not(atBlock(BlockID)))) do insert(not(atBlock(BlockID))).
+		forall bel(percept(atBlock(BlockID))) do insert(atBlock(BlockID)).
 		
 		%%%%%%%%%%%%%%%%%% sending messages and processing received messages %%%%%%%%%%%%%%%%%%%%
 		% (Optional) Assignment III.5b: insert one or more rule(s) for messages sent by other agents.
