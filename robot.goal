@@ -12,6 +12,26 @@ init module {
 		% Assignment II.2: insert a definition of the predicate "nextColorInSeq(Color)".
 		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).
 		
+%		closestRoom(AllPossibleRooms,CurrentRoom,NavPoints,ClosestRoom) :-
+%			getClosestRoom(AllPossibleRooms,CurrentRoom,CurrentRoomX,CurrentRoomY,NavPoints,ClosestRoom,Distance).
+		
+%		getClosestRoom(_,_,[],_,666).
+%		getClosestRoom(All,C,CX,CY,[navpoint(_,Room,X,Y,_)|T],Closest,Distance):-
+%			member(Room,All),
+%			( (CX-X
+		
+		
+		%Closest target room finding algorithm
+		closestRoom(AllRooms,CurrentRoom,ClosestRoom) :-
+			getClosestRoom(AllRooms,CurrentRoom,ClosestRoom,0).
+		
+		%Find the closest room in the graph
+		getClosestRoom(Al,Cu,Cl,Di) :-
+			neighbour(Cu,Room),
+			( member(Room,Al)
+				-> Cl = Room
+				; true).
+		
 	}
 	
 	beliefs{
@@ -29,6 +49,8 @@ init module {
 		forall bel(percept(sequence(Colours))) do insert(sequence(Colours)).
 		
 		forall bel(place(Place), room(Place)) do adopt(at(Place)).
+				
+		forall bel(navpoint(_,Room,_,_,L),member(X,L)) do insert(neighbour(Room,X),neighbour(X,Room)).
 	}
 		
 	actionspec{	
