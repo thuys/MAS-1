@@ -23,15 +23,30 @@ init module {
 		
 		%Closest target room finding algorithm
 		closestRoom(AllRooms,CurrentRoom,ClosestRoom) :-
-			getClosestRoom(AllRooms,CurrentRoom,ClosestRoom,0).
-		
+			getClosestRoom(AllRooms,ClosestRoom,[CurrentRoom]).
+
+		%Gets Neighbours of a List
+		getNeighbours([],[]).
+		getNeighbours([A|T],Neighbours) :-
+			findall(N,neighbour(A,N),NList),
+			getNeighbours(T,NewNeighbours),
+			append(NewNeighbours,NList,Neighbours).
+			
 		%Find the closest room in the graph
-		getClosestRoom(Al,Cu,Cl,Di) :-
-			neighbour(Cu,Room),
-			( member(Room,Al)
-				-> Cl = Room
-				; true).
-		
+		getClosestRoom(Al,Cl,Acc) :-
+			getNeighbours(Acc,FoundList),
+			flatten(FoundList,FlatList),
+			append(Acc,FlatList,NewList),
+			list_to_set(NewList,NewAcc),
+			intersection(Al,NewAcc,FoundList),
+			length(FoundList,Size),
+			( Size > 0
+				-> Cl = nth0(FoundList,0)
+				; getClosestRoom(Al,Cl,NewAcc)).
+				
+		%Testing Predicate
+		test(X) :-
+			closestRoom(['RoomA1','RoomA2','RoomA3'],'RoomC2',X).
 	}
 	
 	beliefs{
