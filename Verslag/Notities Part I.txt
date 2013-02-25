@@ -79,3 +79,7 @@ Liked
 Improve
 - Prolog debugger, a stepping within prolog code
 - Having to manually restart the goal agent and server. 
+
+III.1
+No efficient solving, the agents aren't aware of each other. They both try to fulfill their goals at the same time. 
+The performance can be improved by sharing the discovery of a room and informing the other robot(s) every time a correctly coloured block is picked up. 
