@@ -93,7 +93,8 @@ init module {
 
 main module{
 	program {
-		% TODO: in verschillende module!
+		forall bel(not(nextColorInSeq(_))), a-goal(at(Room)) do drop(at(Room)).
+		
 		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))) then insert(new_target(Room, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(Room)).
 		
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
