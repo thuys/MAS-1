@@ -64,3 +64,18 @@ II.4
 Using the original codebase, the first cycles uses the adopt function to place the goals. 
 As these are never fulfilled, no goals get deleted, and the robot keeps looping over all locations.
 Goals can be deleted in two ways: Automatically by just fulfilling the goal, or by dropping them manually.
+
+II.7 
+No problems on any map
+
+II.8
+Syntax is much less intuitive yet programs can be written much more elegantly and concise. 
+
+II.9
+Liked
+- Both visual and textual feedback
+- Queries and action to manually manipulate and question the beliefs and knowledge of the agent. 
+
+Improve
+- Prolog debugger, a stepping within prolog code
+- Having to manually restart the goal agent and server. 

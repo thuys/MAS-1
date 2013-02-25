@@ -99,7 +99,6 @@ main module{
 		
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
 		
-		%if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then adopt(holding(BlockID)).
 		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
 		
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
