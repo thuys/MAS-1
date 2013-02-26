@@ -10,43 +10,33 @@ init module {
 		room(X):- rooms(L), member(X,L).
 		
 		% Assignment II.2: insert a definition of the predicate "nextColorInSeq(Color)".
-		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).
+		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).		
 		
-%		closestRoom(AllPossibleRooms,CurrentRoom,NavPoints,ClosestRoom) :-
-%			getClosestRoom(AllPossibleRooms,CurrentRoom,CurrentRoomX,CurrentRoomY,NavPoints,ClosestRoom,Distance).
-		
-%		getClosestRoom(_,_,[],_,666).
-%		getClosestRoom(All,C,CX,CY,[navpoint(_,Room,X,Y,_)|T],Closest,Distance):-
-%			member(Room,All),
-%			( (CX-X
-		
-		
-		%Closest target room finding algorithm
+		%Returns the room in AllRooms that is closest in travel time to CurrentRoom.
 		closestRoom(AllRooms,CurrentRoom,ClosestRoom) :-
 			getClosestRoom(AllRooms,ClosestRoom,[CurrentRoom]).
 
-		%Gets Neighbours of a List
+		%Gets all neighbouring rooms of a list provided.
 		getNeighbours([],[]).
 		getNeighbours([A|T],Neighbours) :-
 			findall(N,neighbour(A,N),NList),
 			getNeighbours(T,NewNeighbours),
 			append(NewNeighbours,NList,Neighbours).
 			
-		%Find the closest room in the graph
+		%Find the closest room in the graph that intersects with the list of rooms provided
 		getClosestRoom(Al,Cl,Acc) :-
 			getNeighbours(Acc,FoundList),
 			flatten(FoundList,FlatList),
 			append(Acc,FlatList,NewList),
 			list_to_set(NewList,NewAcc),
-			intersection(Al,NewAcc,FoundList),
-			length(FoundList,Size),
+			intersection(Al,NewAcc,NewFoundList),
+			length(NewFoundList,Size),
 			( Size > 0
-				-> Cl = nth0(FoundList,0)
-				; getClosestRoom(Al,Cl,NewAcc)).
-				
-		%Testing Predicate
-		test(X) :-
-			closestRoom(['RoomA1','RoomA2','RoomA3'],'RoomC2',X).
+			->nth0(0, NewFoundList, Cl)
+			;
+			(   length(NewAcc, NewLength), length(Acc, NewLength))
+			->  false
+			;   getClosestRoom(Al,Cl,NewAcc)).
 	}
 	
 	beliefs{
@@ -125,8 +115,8 @@ main module{
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)) then putDown.
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)), not(bel(holding(BlockID))) then delete(new_target(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
-		% Initial code.
-		if a-goal(at(Place)) then goTo(Place).
+		% Chooses the goal room that is closest to the current one for optimal pathfinding.
+		if a-goal(at(Room)), bel(unvisited(L),at(CR),closestRoom(L,CR,Room)) then goTo(Room).
 		
 		% Assignment II.5: improve the two lines of code above such that the agent 
 		%   checks the rooms in a more efficient way (not checking the same room 
