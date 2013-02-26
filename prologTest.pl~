@@ -79,7 +79,7 @@ getClosestRoom(Al,Cl,Acc) :-
 		->nth0(0, NewFoundList, Cl)
 		;
 	(   length(NewAcc, NewLength), length(Acc, NewLength))
-		->  false1
+		->  false
 		;   getClosestRoom(Al,Cl,NewAcc)).
 
 test(X) :-
