@@ -192,7 +192,7 @@ event module{
 		forall bel(received(Robot, not(color(Room, BlockID, ColourID)))) do delete(color(Room, BlockID, ColourID)) + delete(received(Robot, not(color(Room, BlockID, ColourID)))).
 		
 		% Process update visited rooms
-		forall bel(received(Robot,visited(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) do delete(unvisited(L)) + insert(unvisited(NewL)) + delete(received(Robot,visited(Place))).
+		forall bel(received(Robot,visited(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) do delete(unvisited(L)) + insert(unvisited(NewL)) + delete(received(Robot,visited(Place))) + drop(at(Place)).
 		
 		% Process an update of the holding. Insert if holding, delete if nog holding anymore.
 		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
