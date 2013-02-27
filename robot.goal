@@ -151,7 +151,7 @@ event module{
 		
 		%TODO: Verwijder alle kleuren van de kamer + mss nog controleren met atBlock
 		% forall bel(color(Room,BlockID, ColourID), percept(at(Room))) do insert(not(color(Room,BlockID, ColourID))).
-		
+		forall bel(percept(at(Room)), color(Room, Block, Colour)) do delete(color(Room, Block, Colour)).
 		forall bel(percept(color(BlockID, ColourID)), at(Room)) do insert(color(Room,BlockID, ColourID)).
 		forall bel(percept(holding(BlockID)), percept(not(color(BlockID, ColourID))), color(Room, BlockID, ColourID)) do delete(color(Room,BlockID, ColourID)).
 		
