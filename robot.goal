@@ -1,5 +1,6 @@
 init module {
 	knowledge{
+		
 		% Predicate room(X) holds if X is a room.
 		room(X):- rooms(L), member(X,L).
 		
