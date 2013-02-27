@@ -1,6 +1,5 @@
 init module {
 	knowledge{
-		
 		% Predicate room(X) holds if X is a room.
 		room(X):- rooms(L), member(X,L).
 		
@@ -115,6 +114,9 @@ main module{
 		
 		% If you want to be in a room with you're next target, just go to that room.
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
+		
+		% If you are in a room and the block is not anymore over there, remove all these goals.
+		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)).
 		
 		% If you want to be arrived at a block, just go to that block (you're in the room by the previous goals)
 		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
