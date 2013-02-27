@@ -112,6 +112,8 @@ init module {
 
 main module{
 	program {
+		#define unvisitedWithoutDibs(L) bel(unvisited(UnvisitedRooms), findall(R, received(_, dibs(R)), DibsRooms), subtract(UnvisitedRooms, DibsRooms, L)).
+		
 		% Find the closest room (Room) in a list of rooms (L) from it's current place.
 		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
 		
@@ -138,7 +140,7 @@ main module{
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), newTarget(Room, BlockID)) then putDown.
 		
 		% Chooses the goal room that is closest to the current one for optimal pathfinding.
-		if a-goal(at(Room)), bel(unvisited(L)), closestRoomFromCurrentPlace(L, Room) then goTo(Room).
+		if a-goal(at(Room)), unvisitedWithoutDibs(L), closestRoomFromCurrentPlace(L, Room) then send(allother, dibs(Room)) + goTo(Room).
 	
 		% The end-goal: Wait outside
 		if a-goal(at(Place)) then goTo(Place).
