@@ -1,14 +1,16 @@
 init module {
 	knowledge{
-		% Predicate room(X) holds if X is a room.
+		% Predicate room(X) holds if X is a room (in the list of rooms).
 		room(X):- rooms(L), member(X,L).
 		
-		% nextColorInSeq(Colour) returns Colour of the next block that should be found by the bot.
+		% Predicate colorInSeq(Colour, Index) holds for the colour present at the index in the sequence of colours.
 		colorInSeq(Colour, Index) :- sequence(Colours), nth0(Index,Colours, Colour).
 		
+		% Predicate nextColorInSeq(Colour, Index) holds for the next colour and index to collect between all agents. 
+		% The index will be at least the current sequence number and the first number that doesn't have any dibsBlock.
 		nextColorInSeq(Colour, Index) :- sequenceIndex(StartNumber), nextColorInSeq(Colour, StartNumber, Index), colorInSeq(Colour, Index).
 		nextColorInSeq(Colour, Acc, Index) :-
-			(not(received(_,dibs(Acc, _)))
+			(not(received(_,dibsBlock(Acc, _)))
 				-> !, Index = Acc
 			; (sequence(Colours), length(Colours, Length), Acc >= Length)
 				-> false
@@ -17,7 +19,7 @@ init module {
 				nextColorInSeq(Colour, NewAcc, Index)).
 				
 		
-		% Returns the place in AllPlaces that is closest in travel time to CurrentPlace.
+		% Returns the place in AllPlaces that is closest in number of places crossed to CurrentPlace.
 		closestPlace(AllPlaces,CurrentPlace,ClosestPlace) :-
 			getClosestPlace(AllPlaces,ClosestPlace,[CurrentPlace]).
 
@@ -112,7 +114,8 @@ init module {
 
 main module{
 	program {
-		#define unvisitedWithoutDibs(L) bel(unvisited(UnvisitedRooms), findall(R, received(_, dibs(R)), DibsRooms), subtract(UnvisitedRooms, DibsRooms, L)).
+		% Find all the rooms that aren't visited yet and don't have any dibsRoom.
+		#define unvisitedWithoutDibs(L) bel(unvisited(UnvisitedRooms), findall(R, received(_, dibsRoom(R)), DibsRooms), subtract(UnvisitedRooms, DibsRooms, L)).
 		
 		% Find the closest room (Room) in a list of rooms (L) from it's current place.
 		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
@@ -126,33 +129,30 @@ main module{
 		% If the agent wants to hold a block and it's at the block it wants to hold, pickup the block.
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), newTarget(_,BlockID)) then pickUp.
 		
-		%TODO
+		% If the agent wants to go to the place 'FrontDropZone' and the agent is holding the block he wants to drop on the 'DropZone', go to the 'FrontZone'
 		if a-goal(at('FrontDropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then goTo('FrontDropZone').
 		
-		% If the agent wants to go to the DropZone and you're holding the block you want to drop on that place, go to the 'DropZone'.
-		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID), dibs(Index), sequenceIndex(Index)) then goTo('DropZone').
+		% If the agent wants to go to the DropZone, the agent is holding the block he wants to drop on that place and he has the dibs for dropping the current block, go to the 'DropZone'.
+		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID), dibsSequence(Index), sequenceIndex(Index)) then goTo('DropZone').
 		
-		%TODO 
+		% If the agent wants to go to the DropZone, the agent is holding the block he wants to drop on that place and he doesn't have the dibs for dropping the current block, go to 'DropZone' (and stay there).
 		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then goTo('FrontDropZone').
 		
-		% If the agent wants to drop a block (that you're holding) at DropZone and if it's at that place, put the block down.
-		% The holding-belief is a prconditition of putDown.
+		% If the agent wants to drop a block (that he is holding) at DropZone and if he is at that place, put the block down.
+		% The holding-belief is a preconditition of putDown.
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), newTarget(Room, BlockID)) then putDown.
 		
-		% Chooses the goal room that is closest to the current one for optimal pathfinding.
-		if a-goal(at(Room)), unvisitedWithoutDibs(L), closestRoomFromCurrentPlace(L, Room) then send(allother, dibs(Room)) + goTo(Room).
+		% Chooses the goal room that is closest to the current one (without any other agent plans for visiting) for optimal pathfinding.
+		if a-goal(at(Room)), unvisitedWithoutDibs(L), closestRoomFromCurrentPlace(L, Room) then goTo(Room) + send(allother, dibsRoom(Room)).
 	
-		% The end-goal: Wait outside
+		% Otherwise: Goto the places with still a goal.
 		if a-goal(at(Place)) then goTo(Place).
-		% (Optional) Assignment III.2: implement dealing with unexpected block removal.
-		
-		% (Optional) Assignment III.3: implement dealing with unexpected block delivery.		
 	}
 }
 
 event module{
 	program{
-		% Find the closest room (Room) in a list of rooms (L) from you're current place.
+		% Find the closest room (Room) in a list of rooms (L) from the agents current place.
 		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
 		%%%%% percepts sent on change %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 				
@@ -160,41 +160,42 @@ event module{
 		if bel(at(Place), percept(at(_))) then delete(at(Place)).
 		if bel(percept(at(Place))) then insert(at(Place)).
 		
-		% By arriving at a new place, if you hadn't visited it yet, remove it from the unvisited list.
+		% If the agents arrives at a place he hasn't been before, remove it from the unvisited list.
 		if bel(percept(at(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) then delete(unvisited(L)) + insert(unvisited(NewL)) + send(allother, visited(Place)).
 		
 		% Process an update of state. Insert the new state, delete first the old state if there is one.
 		if bel(state(OldState), percept(state(_)) ) then delete(state(OldState)).
 		if bel(percept(state(State))) then insert(state(State)).		
 		
-		% Process an update of occupied. Insert if a room is occupied, delete if nog anymore.
+		% Process an update of occupied. Insert if a room is occupied, delete a non-occupied room.
 		if bel(percept(occupied(Room))) then insert(occupied(Room)). 
 		if bel(percept(not(occupied(Room)))) then delete(occupied(Room)). 
 		
 		
 		% Process the colors in a room
-		%% If the robot arrives in a new room, delete all the colors of the room. The new knowledge will be based on the current perception. 
+		%% If the agent arrives in a new room, delete all the colors of the room. The new knowledge will be based on the current perception. 
 		forall bel(percept(at(Room)), color(Room, Block, Colour)) do delete(color(Room, Block, Colour)).
 		%% Add the new percepts in a specific room.
 		forall bel(at(Room), percept(color(BlockID, ColourID))) do insert(color(Room,BlockID, ColourID)).
 		
-		% If you start holding a block, the block won't be present in the room anymore, so delete it from the knowledge.
-		% TODO: zet hier mss if!
+		% If the agent starts holding a block, the block won't be present in the room anymore, so delete it from the knowledge.
 		if bel(percept(holding(BlockID)), color(Room, BlockID, ColourID)) then delete(color(Room,BlockID, ColourID)).
 
-		% Send update from the blocks in a room
+		% Send update from the blocks in a room to all other agents by every update of colors at the current place. 
 		forall bel(percept(at(Room)), color(Room, Block, Colour)) do send(allother, color(Room, Block, Colour)).
 		if bel(percept(holding(BlockID)), color(Room, BlockID, ColourID)) then send(allother, not(color(Room, BlockID, ColourID))).
 		
-		% Process update from blocks in a room
+		% Process update from blocks in a room sent by other agents by first deleting all the information the agent has about this room and then inserting all the new information.
 		forall bel(received(_, color(Room, _,_)), color(Room, BlockID, ColourID)) do delete(color(Room, BlockID, ColourID)).
-		forall bel(received(Robot, color(Room, BlockID, ColourID))) do insert(color(Room, BlockID, ColourID)) + delete(received(Robot, color(Room, BlockID, ColourID))).
-		forall bel(received(Robot, not(color(Room, BlockID, ColourID)))) do delete(color(Room, BlockID, ColourID)) + delete(received(Robot, not(color(Room, BlockID, ColourID)))).
+		forall bel(received(Agent, color(Room, BlockID, ColourID))) do insert(color(Room, BlockID, ColourID)) + delete(received(Agent, color(Room, BlockID, ColourID))).
 		
-		% Process update visited rooms
-		forall bel(received(Robot,visited(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) do delete(unvisited(L)) + insert(unvisited(NewL)) + delete(received(Robot,visited(Place))) + drop(at(Place)).
+		% If another agent sees that a block isn't present in a room anymore, delete it from the beliefs.
+		forall bel(received(Agent, not(color(Room, BlockID, ColourID)))) do delete(color(Room, BlockID, ColourID)) + delete(received(Agent, not(color(Room, BlockID, ColourID)))).
 		
-		% Process an update of the holding. Insert if holding, delete if nog holding anymore.
+		% If another agent arrives in another room, this agent doesn't have to discover it anymore.
+		forall bel(received(Agent,visited(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) do delete(unvisited(L)) + insert(unvisited(NewL)) + delete(received(Agent,visited(Place))) + drop(at(Place)).
+		
+		% Process an update of the holding. Insert if holding, delete if not holding anymore.
 		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
 		if bel(percept(not(holding(BlockID)))) then delete(holding(BlockID)).
 		
@@ -202,40 +203,33 @@ event module{
 		if bel(percept(sequenceIndex(_)), sequenceIndex(OldColorID)) then delete(sequenceIndex(OldColorID)).
 		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)). 
 		
-		% If the agent percepts a new sequence number and there aren't any block to deliver, stop discovering the the map.
+		% If the agent percepts a new sequence number and there aren't any block to deliver, stop discovering the the map and drive to the FrontDropZone (don't block other agents)
 		forall bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_, _))), a-goal(at(Room)) do drop(at(Room)).
 		if bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_, _))) then adopt(at('FrontDropZone')).
 		
-		% Process the percepts for being at a block. Removing if not at a block, otherwise added.  
+		% Process the percepts for being at a block. Removing if the agents isn't at a block anymore, otherwise add.  
 		forall bel(percept(not(atBlock(BlockID)))) do insert(not(atBlock(BlockID))).
 		forall bel(percept(atBlock(BlockID))) do insert(atBlock(BlockID)).
-		
-		%%%%%%%%%%%%%%%%%% sending messages and processing received messages %%%%%%%%%%%%%%%%%%%%
-		% (Optional) Assignment III.5b: insert one or more rule(s) for messages sent by other agents.
-		% The following rule is an example of how to process a message containing a block ID.
-		
-		forall bel(received(Sender, block(Id))) do insert(block(Id)) + delete(received(Sender, block(Id))).
-		
-		% (Optional) Assignment III.5a: insert send-actions to implement the communication
-		%    of your choice (may be implemented here or in the event module)
 			
-		% If you are in a room and the block is not anymore over there, remove all these goals.
+		% If the agent is in a room and the block is not anymore over there, remove all the goals for picking it up.
 		if a-goal(atBlock(BlockID), state(arrived)), bel(newTarget(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)) + delete(newTarget(Room, BlockID)).
 		
-		%TODO If you want to picked up a block and you're at the block, the next step is going to the dropzone after holding the block.  
+		% If the agent wants to picked up a block and he is at the block, the next step is going to the FrontDropZone after holding the block.  
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), newTarget(_,BlockID)) then adopt(at('FrontDropZone')).
 		
+		% If the agent is driving to the 'FrontDropZone' and he is holding a block to be dropped in the DropZone, the next step will be to go the the DropZone.
 		if a-goal(at('FrontDropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then adopt(at('DropZone')).
 		
-		% If you want to be at the dropzone and you're holding a block, the next step is dropping the the block in the dropzone.
+		% If the agent wants to be at the dropzone and he is holding a block, the next step is dropping the the block in the dropzone.
 		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then adopt(dropBlock(BlockID)).
 		
-		% If you wanted to drop a block at DropZone and you're at that place and not holding the block anymore. The action is fulfilled and you can remove you're target.
+		% If the agents wants to drop a block at DropZone and he is at that place and not holding the block anymore. The action is fulfilled and he can remove his target.
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), newTarget(Room, BlockID)), not(bel(holding(BlockID))) then delete(newTarget(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
-		% If you don't have a current target for picking up a block and dropping, find the closest room where the next block is present. Then go to that room and hold the block. 
-		if bel(nextColorInSeq(ColourID, Index), findall(PossibleRoom, (color(PossibleRoom, BlockID, ColourID), not(received(_, dibs(_, BlockID)))), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
+		% If he doesn't have a current target for picking up a block and dropping, find the closest room where the next block is present without yet any dibs. 
+		% Then plan to go to that room, plan to hold the block and send this information to all the other agents. 
+		if bel(nextColorInSeq(ColourID, Index), findall(PossibleRoom, (color(PossibleRoom, BlockID, ColourID), not(received(_, dibsBlock(_, BlockID)))), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
 			not(bel(newTarget(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  
-			then insert(newTarget(NewRoom, BlockID), dibs(Index)) + send(allother, dibs(Index, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
+			then insert(newTarget(NewRoom, BlockID), dibsSequence(Index)) + send(allother, dibsBlock(Index, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
 	}
 }
