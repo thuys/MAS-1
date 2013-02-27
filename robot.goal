@@ -101,40 +101,24 @@ init module {
 
 main module{
 	program {
-		% Find the closest room (Room) in a list of rooms (L) from you're current place.
+		% Find the closest room (Room) in a list of rooms (L) from it's current place.
 		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
 		
-		% If you don't have any blocks to deliver. Just stop discovering the rooms.
-		forall bel(not(nextColorInSeq(_))), a-goal(at(Room)) do drop(at(Room)).
-		
-		% If you don't have a current target for picking up a block and dropping, find the closest room where the next block is present. Then go to that room and hold the block. 
-		if bel(nextColorInSeq(ColourID), findall(PossibleRoom, color(PossibleRoom, _, ColourID), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
-			not(bel(new_target(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  
-			then insert(new_target(NewRoom, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
-		
-		% If you want to be in a room with you're next target, just go to that room.
+		% If the agent wants to be in a room that is the same as its next target, just go to that room.
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
 		
-		% If you are in a room and the block is not anymore over there, remove all these goals.
-		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)).
-		
-		% If you want to be arrived at a block, just go to that block (you're in the room by the previous goals)
+		% If the agent wants to be arrived at a block, just go to that block (the agent is in the room by the previous goal)
 		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(_,BlockID)) then goToBlock(BlockID).
 		
-		% If you want to hold a block and you're at the block you want to hold, remember what you want to do next (goTo the DropZone) and afterward pickup the block.
-		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
+		% If the agent wants to hold a block and it's at the block it wants to hold, pickup the block.
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then pickUp.
 		
-		% If you want to go to the DropZone and you're holding the block you want to drop on that place. Adapt the goal for dropping the goal and then go to the 'DropZone'.
-		if a-goal(at('DropZone')), bel(holding(BlockID), new_target(_,BlockID)) then adopt(dropBlock(BlockID)).
+		% If the agent wants to go to the DropZone and you're holding the block you want to drop on that place, go to the 'DropZone'.
 		if a-goal(at('DropZone')), bel(holding(BlockID), new_target(_,BlockID)) then goTo('DropZone').
 		
-		% If you wan't to drop a block (that you're holding) at DropZone and if you're at that place, put the block down.
+		% If the agent wants to drop a block (that you're holding) at DropZone and if it's at that place, put the block down.
 		% The holding-belief is a prconditition of putDown.
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)) then putDown.
-		
-		% If you wanted to drop a block at DropZone and you're at that place and not holding the block anymore. The action is fulfilled and you can remove you're target.
-		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)), not(bel(holding(BlockID))) then delete(new_target(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
 		% Chooses the goal room that is closest to the current one for optimal pathfinding.
 		if a-goal(at(Room)), bel(unvisited(L)), closestRoomFromCurrentPlace(L, Room) then goTo(Room).
@@ -147,6 +131,8 @@ main module{
 
 event module{
 	program{
+		% Find the closest room (Room) in a list of rooms (L) from you're current place.
+		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
 		%%%%% percepts sent on change %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 				
 		% Process an update of a place. Insert the new place, delete first the old place if there is one.
@@ -182,6 +168,8 @@ event module{
 		if bel(percept(sequenceIndex(_)), sequenceIndex(OldColorID)) then delete(sequenceIndex(OldColorID)).
 		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)). 
 		
+		% If the agent percepts a new sequence number and there aren't any block to deliver, stop discovering the the map.
+		forall bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_))), a-goal(at(Room)) do drop(at(Room)).
 		
 		% Process the percepts for being at a block. Removing if not at a block, otherwise added.  
 		forall bel(percept(not(atBlock(BlockID)))) do insert(not(atBlock(BlockID))).
@@ -195,5 +183,22 @@ event module{
 		
 		% (Optional) Assignment III.5a: insert send-actions to implement the communication
 		%    of your choice (may be implemented here or in the event module)
+			
+		% If you are in a room and the block is not anymore over there, remove all these goals.
+		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)).
+		
+		% If you want to picked up a block and you're at the block, the next step is going to the dropzone after holding the block.  
+		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
+		
+		% If you want to be at the dropzone and you're holding a block, the next step is dropping the the block in the dropzone.
+		if a-goal(at('DropZone')), bel(holding(BlockID), new_target(_,BlockID)) then adopt(dropBlock(BlockID)).
+		
+		% If you wanted to drop a block at DropZone and you're at that place and not holding the block anymore. The action is fulfilled and you can remove you're target.
+		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)), not(bel(holding(BlockID))) then delete(new_target(Room, BlockID)) + drop(dropBlock(BlockID)).
+		
+		% If you don't have a current target for picking up a block and dropping, find the closest room where the next block is present. Then go to that room and hold the block. 
+		if bel(nextColorInSeq(ColourID), findall(PossibleRoom, color(PossibleRoom, _, ColourID), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
+			not(bel(new_target(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  
+			then insert(new_target(NewRoom, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
 	}
 }
