@@ -1,42 +1,40 @@
 init module {
 	knowledge{
-		% Hardcoded list of all rooms in the maps we use for the BW4T environment.
-		% Note that room names are strings (to avoid that names with capitals are treated as variables).
-		
-		% TODO: niet hardcoden (zet in program)
-		% rooms(['RoomA1','RoomA2','RoomA3','RoomB1','RoomB2','RoomB3','RoomC1','RoomC2','RoomC3']).
-
 		% Predicate room(X) holds if X is a room.
 		room(X):- rooms(L), member(X,L).
 		
-		% Assignment II.2: insert a definition of the predicate "nextColorInSeq(Color)".
+		% nextColorInSeq(Colour) returns Colour of the next block that should be found by the bot.
 		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).		
 		
-		%Returns the room in AllRooms that is closest in travel time to CurrentRoom.
-		closestRoom(AllRooms,CurrentRoom,ClosestRoom) :-
-			getClosestRoom(AllRooms,ClosestRoom,[CurrentRoom]).
+		% Returns the place in AllPlaces that is closest in travel time to CurrentPlace.
+		closestPlace(AllPlaces,CurrentPlace,ClosestPlace) :-
+			getClosestPlace(AllPlaces,ClosestPlace,[CurrentPlace]).
 
-		%Gets all neighbouring rooms of a list provided.
+		% Gets all places neighbouring at least one place in the list provided as first argument.
 		getNeighbours([],[]).
 		getNeighbours([A|T],Neighbours) :-
 			findall(N,neighbour(A,N),NList),
 			getNeighbours(T,NewNeighbours),
 			append(NewNeighbours,NList,Neighbours).
 			
-		%Find the closest room in the graph that intersects with the list of rooms provided
-		getClosestRoom(Al,Cl,Acc) :-
+		% Find the closest place in the graph that intersects with the list of rooms provided.
+		% Uses breadth-first search for easy shortest-path finding in the graph
+		% AllPlaces is the list of all places from which the closest to the current place should be returned.
+		% ClosestPlace is that closest place.
+		% Acc is an accumulating list initialized at the current (starting) place.
+		getClosestPlace(AllPlaces,ClosestPlace,Acc) :-
 			getNeighbours(Acc,FoundList),
 			flatten(FoundList,FlatList),
 			append(Acc,FlatList,NewList),
 			list_to_set(NewList,NewAcc),
-			intersection(Al,NewAcc,NewFoundList),
+			intersection(AllPlaces,NewAcc,NewFoundList),
 			length(NewFoundList,Size),
 			( Size > 0
-			->nth0(0, NewFoundList, Cl)
+			->nth0(0, NewFoundList, ClosestPlace)
 			;
 			(   length(NewAcc, NewLength), length(Acc, NewLength))
 			->  false
-			;   getClosestRoom(Al,Cl,NewAcc)).
+			;   getClosestPlace(AllPlaces,ClosestPlace,NewAcc)).
 	}
 	
 	beliefs{
@@ -44,21 +42,28 @@ init module {
 	}
 	
 	program{
-		% Assignment II.1a: insert here rules for processing percepts sent only at the beginning of a session.
+		% Inserts all places in beliefs on initialization
 		forall bel(percept(place(R))) do insert(place(R)).
 		
+		% Inserts the agents own name in beliefs on initialization
 		forall bel(percept(ownName(X))) do insert(ownName(X)).
 		
+		% Inserts all navpoints in beliefs on initialization
 		forall bel(percept(navpoint(Nb, Room, X, Y, Neightbours))) do insert(navpoint(Nb, Room, X, Y, Neightbours)).
 		
+		% Inserts the sequence of blocks to be retrieved in beliefs on initialization
 		forall bel(percept(sequence(Colours))) do insert(sequence(Colours)).
 		
+		% Inserts list of all valid rooms in beliefs on initialization
 		if bel(findall(R, (place(R), R \== 'DropZone', navpoint(_,R,_,_,Neighbours), length(Neighbours,1)), Rooms)) then insert(rooms(Rooms)).
 		
+		% Adopts the list of rooms in goals on initialization
 		forall bel(place(Place), room(Place)) do adopt(at(Place)).
-				
+		
+		% Inserts the neighbouring graph of the entire map in beliefs on initialization
 		forall bel(navpoint(_,Room,_,_,L),member(X,L)) do insert(neighbour(Room,X),neighbour(X,Room)).
 		
+		% Inserts the list of unvisited rooms in beliefs on initialization
 		if bel(findall(R, room(R), L)) then insert(unvisited(L)).
 	}
 		
@@ -72,22 +77,20 @@ init module {
 			post { true }
 		}
 		
-		% Assignment II.3a: insert a specification for the goToBlock(Block) action.
-		% TODO: post condities...
+		% The goToBlock action makes to agent move to a block in a room.
+		% As long as the agent has not arrived at the block it is going to, it will be in "traveling" mode.
 		goToBlock(Block) {
             pre { state(arrived), at(Room), color(Room, Block,_)  } %TODO: mss aanpassen met nextColorInSeq
 			post { atBlock(Block), state(arrived) }
 		}
 		
-		% Assignment II.3b: insert a specification for the pickUp action.
-		% TODO: post condities...
+		% The pickUp action makes the agent pick up the block it is currently located at.
 		pickUp {
             pre { state(arrived), atBlock(BlockID), not(holding(_)), state(arrived) }
 			post { holding(BlockID) }
 		}
 		
-		% Assignment II.3c: insert a specification for the putDown action.
-		% TODO: post condities...
+		% The putDown action makes the agent put down the block it is currently holding.
 		putDown {
             pre { state(arrived), holding(BlockID) }
 			post { not(holding(BlockID)) }
@@ -98,7 +101,7 @@ init module {
 
 main module{
 	program {
-		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestRoom(L,CR,Room)).
+		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestPlace(L,CR,Room)).
 		
 		% #define nextBlockToPickup(Room, BlockID) bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))).
 		%#define nextBlockToPickup(Room, BlockID) 
