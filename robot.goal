@@ -124,8 +124,14 @@ main module{
 		% If the agent wants to hold a block and it's at the block it wants to hold, pickup the block.
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), newTarget(_,BlockID)) then pickUp.
 		
+		%TODO
+		if a-goal(at('FrontDropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then goTo('FrontDropZone').
+		
 		% If the agent wants to go to the DropZone and you're holding the block you want to drop on that place, go to the 'DropZone'.
-		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then goTo('DropZone').
+		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID), dibs(Index), sequenceIndex(Index)) then goTo('DropZone').
+		
+		%TODO 
+		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then goTo('FrontDropZone').
 		
 		% If the agent wants to drop a block (that you're holding) at DropZone and if it's at that place, put the block down.
 		% The holding-belief is a prconditition of putDown.
@@ -214,8 +220,10 @@ event module{
 		% If you are in a room and the block is not anymore over there, remove all these goals.
 		if a-goal(atBlock(BlockID), state(arrived)), bel(newTarget(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)) + delete(newTarget(Room, BlockID)).
 		
-		% If you want to picked up a block and you're at the block, the next step is going to the dropzone after holding the block.  
-		if a-goal(holding(BlockID)), bel(atBlock(BlockID), newTarget(_,BlockID)) then adopt(at('DropZone')).
+		%TODO If you want to picked up a block and you're at the block, the next step is going to the dropzone after holding the block.  
+		if a-goal(holding(BlockID)), bel(atBlock(BlockID), newTarget(_,BlockID)) then adopt(at('FrontDropZone')).
+		
+		if a-goal(at('FrontDropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then adopt(at('DropZone')).
 		
 		% If you want to be at the dropzone and you're holding a block, the next step is dropping the the block in the dropzone.
 		if a-goal(at('DropZone')), bel(holding(BlockID), newTarget(_,BlockID)) then adopt(dropBlock(BlockID)).
@@ -226,6 +234,6 @@ event module{
 		% If you don't have a current target for picking up a block and dropping, find the closest room where the next block is present. Then go to that room and hold the block. 
 		if bel(nextColorInSeq(ColourID, Index), findall(PossibleRoom, (color(PossibleRoom, BlockID, ColourID), not(received(_, dibs(_, BlockID)))), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
 			not(bel(newTarget(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  
-			then insert(newTarget(NewRoom, BlockID)) + send(allother, dibs(Index, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
+			then insert(newTarget(NewRoom, BlockID), dibs(Index)) + send(allother, dibs(Index, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
 	}
 }
