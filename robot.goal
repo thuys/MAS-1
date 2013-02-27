@@ -98,9 +98,15 @@ init module {
 
 main module{
 	program {
+		#define closestRoomFromCurrentPlace(L, Room) bel(at(CR), closestRoom(L,CR,Room)).
+		
+		% #define nextBlockToPickup(Room, BlockID) bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))).
+		%#define nextBlockToPickup(Room, BlockID) 
+		%	bel(nextColorInSeq(ColourID), findall(PossibleRoom, color(PossibleRoom, _, ColourID), PossibleRooms), color(NewRoom, BlockID, ColourID), not(bel(new_target(_1, _2)))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom).
+			
 		forall bel(not(nextColorInSeq(_))), a-goal(at(Room)) do drop(at(Room)).
 		
-		if bel(color(Room, BlockID, ColourID), nextColorInSeq(ColourID)), not(bel(new_target(_1, _2))) then insert(new_target(Room, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(Room)).
+		if bel(nextColorInSeq(ColourID), findall(PossibleRoom, color(PossibleRoom, _, ColourID), PossibleRooms), color(NewRoom, BlockID, ColourID)), not(bel(new_target(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  then insert(new_target(NewRoom, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
 		
 		if a-goal(at(Room)), bel(new_target(Room,_)) then goTo(Room).
 		
@@ -116,7 +122,7 @@ main module{
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), new_target(Room, BlockID)), not(bel(holding(BlockID))) then delete(new_target(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
 		% Chooses the goal room that is closest to the current one for optimal pathfinding.
-		if a-goal(at(Room)), bel(unvisited(L),at(CR),closestRoom(L,CR,Room)) then goTo(Room).
+		if a-goal(at(Room)), bel(unvisited(L)), closestRoomFromCurrentPlace(L, Room) then goTo(Room).
 		
 		% Assignment II.5: improve the two lines of code above such that the agent 
 		%   checks the rooms in a more efficient way (not checking the same room 
