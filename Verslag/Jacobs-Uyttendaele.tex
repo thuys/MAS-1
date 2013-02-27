@@ -8,10 +8,10 @@
 \begin{document}
 \maketitle
 \part{}
-\begin{tabular}{ l c }
-1. & A2, B2, C1, B2, B1, C3, B1, B3, C2, B2, A1, A3.\\
- & C2, A2, B3, C3, A1, A3, B1, A3, A1, A2, A1, B2.\\
- & A3, C3, A3, C2, B2, B1, A1, A2, C3, A2, B2, C1.
+\begin{tabular}{ l c | c }
+1.& Run 1: & A2, B2, C1, B2, B1, C3, B1, B3, C2, B2, A1, A3.\\
+ & Run 2: & C2, A2, B3, C3, A1, A3, B1, A3, A1, A2, A1, B2.\\
+ & Run 3: & A3, C3, A3, C2, B2, B1, A1, A2, C3, A2, B2, C1.
 \end{tabular}\\\\
 \hphantom{1}2. The agent produces different behaviour every run, caused by lines 46-47.
 The first line generates a goal for every possible next location, the second line randomly chooses one of those goals and sets it as the next location to go to.\\\\
