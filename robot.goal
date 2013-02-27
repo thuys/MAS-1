@@ -4,7 +4,18 @@ init module {
 		room(X):- rooms(L), member(X,L).
 		
 		% nextColorInSeq(Colour) returns Colour of the next block that should be found by the bot.
-		nextColorInSeq(Colour) :- sequenceIndex(Number), sequence(Colours), nth0(Number,Colours, Colour).		
+		colorInSeq(Colour, Index) :- sequence(Colours), nth0(Index,Colours, Colour).
+		
+		nextColorInSeq(Colour, Index) :- sequenceIndex(StartNumber), nextColorInSeq(Colour, StartNumber, Index), colorInSeq(Colour, Index).
+		nextColorInSeq(Colour, Acc, Index) :-
+			(not(received(_,dibs(Acc, _)))
+				-> !, Index = Acc
+			; (sequence(Colours), length(Colours, Length), Acc >= Length)
+				-> false
+			;
+				NewAcc is Acc + 1,
+				nextColorInSeq(Colour, NewAcc, Index)).
+				
 		
 		% Returns the place in AllPlaces that is closest in travel time to CurrentPlace.
 		closestPlace(AllPlaces,CurrentPlace,ClosestPlace) :-
@@ -122,7 +133,9 @@ main module{
 		
 		% Chooses the goal room that is closest to the current one for optimal pathfinding.
 		if a-goal(at(Room)), bel(unvisited(L)), closestRoomFromCurrentPlace(L, Room) then goTo(Room).
-		
+	
+		% The end-goal: Wait outside
+		if a-goal(at(Place)) then goTo(Place).
 		% (Optional) Assignment III.2: implement dealing with unexpected block removal.
 		
 		% (Optional) Assignment III.3: implement dealing with unexpected block delivery.		
@@ -182,7 +195,8 @@ event module{
 		if bel(percept(sequenceIndex(ColourID))) then insert(sequenceIndex(ColourID)). 
 		
 		% If the agent percepts a new sequence number and there aren't any block to deliver, stop discovering the the map.
-		forall bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_))), a-goal(at(Room)) do drop(at(Room)).
+		forall bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_, _))), a-goal(at(Room)) do drop(at(Room)).
+		if bel(percept(sequenceIndex(ColourID)), not(nextColorInSeq(_, _))) then adopt(at('FrontDropZone')).
 		
 		% Process the percepts for being at a block. Removing if not at a block, otherwise added.  
 		forall bel(percept(not(atBlock(BlockID)))) do insert(not(atBlock(BlockID))).
@@ -210,8 +224,8 @@ event module{
 		if a-goal(dropBlock(BlockID)), bel(at('DropZone'), newTarget(Room, BlockID)), not(bel(holding(BlockID))) then delete(newTarget(Room, BlockID)) + drop(dropBlock(BlockID)).
 		
 		% If you don't have a current target for picking up a block and dropping, find the closest room where the next block is present. Then go to that room and hold the block. 
-		if bel(nextColorInSeq(ColourID), findall(PossibleRoom, color(PossibleRoom, _, ColourID), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
+		if bel(nextColorInSeq(ColourID, Index), findall(PossibleRoom, (color(PossibleRoom, BlockID, ColourID), not(received(_, dibs(_, BlockID)))), PossibleRooms), color(NewRoom, BlockID, ColourID)), 
 			not(bel(newTarget(_1, _2))), closestRoomFromCurrentPlace(PossibleRooms, NewRoom)  
-			then insert(newTarget(NewRoom, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
+			then insert(newTarget(NewRoom, BlockID)) + send(allother, dibs(Index, BlockID)) + adopt(holding(BlockID)) + adopt(atBlock(BlockID), state(arrived)) + adopt(at(NewRoom)).
 	}
 }
