@@ -185,7 +185,7 @@ event module{
 		%    of your choice (may be implemented here or in the event module)
 			
 		% If you are in a room and the block is not anymore over there, remove all these goals.
-		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)).
+		if a-goal(atBlock(BlockID), state(arrived)), bel(new_target(Room,BlockID)), not(bel(color(Room, BlockID, _))) then drop(holding(BlockID)) + drop(atBlock(BlockID), state(arrived)) + delete(new_target(Room, BlockID)).
 		
 		% If you want to picked up a block and you're at the block, the next step is going to the dropzone after holding the block.  
 		if a-goal(holding(BlockID)), bel(atBlock(BlockID), new_target(_,BlockID)) then adopt(at('DropZone')).
