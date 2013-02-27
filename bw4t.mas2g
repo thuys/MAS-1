@@ -6,10 +6,10 @@ environment{
 
 agentfiles{
 	% insert (list of) agent file references below.
-	"Jacobs-Uyttendaele.goal" [name = Jacobs-Uyttendaele] .
+	"Jacobs-Uyttendaele.goal" [name = robot] .
 }
 
 launchpolicy{
 	% insert appropriate launch rules for your environment and agents below.
-	when [max=2]@env do launch Jacobs-Uyttendaele : Jacobs-Uyttendaele .
+	when [max=2]@env do launch robot : robot .
 }
