@@ -140,7 +140,7 @@ event module{
 		if bel(percept(at(Place))) then insert(at(Place)).
 		
 		% By arriving at a new place, if you hadn't visited it yet, remove it from the unvisited list.
-		if bel(percept(at(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) then delete(unvisited(L)) + insert(unvisited(NewL)).
+		if bel(percept(at(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) then delete(unvisited(L)) + insert(unvisited(NewL)) + send(allother, visited(Place)).
 		
 		% Process an update of state. Insert the new state, delete first the old state if there is one.
 		if bel(state(OldState), percept(state(_)) ) then delete(state(OldState)).
@@ -155,10 +155,23 @@ event module{
 		%% If the robot arrives in a new room, delete all the colors of the room. The new knowledge will be based on the current perception. 
 		forall bel(percept(at(Room)), color(Room, Block, Colour)) do delete(color(Room, Block, Colour)).
 		%% Add the new percepts in a specific room.
-		forall bel(percept(color(BlockID, ColourID)), at(Room)) do insert(color(Room,BlockID, ColourID)).
+		forall bel(at(Room), percept(color(BlockID, ColourID))) do insert(color(Room,BlockID, ColourID)).
 		
 		% If you start holding a block, the block won't be present in the room anymore, so delete it from the knowledge.
-		forall bel(percept(holding(BlockID)), percept(not(color(BlockID, ColourID))), color(Room, BlockID, ColourID)) do delete(color(Room,BlockID, ColourID)).
+		% TODO: zet hier mss if!
+		if bel(percept(holding(BlockID)), color(Room, BlockID, ColourID)) then delete(color(Room,BlockID, ColourID)).
+
+		% Send update from the blocks in a room
+		forall bel(percept(at(Room)), color(Room, Block, Colour)) do send(allother, color(Room, Block, Colour)).
+		if bel(percept(holding(BlockID)), color(Room, BlockID, ColourID)) then send(allother, not(color(Room, BlockID, ColourID))).
+		
+		% Process update from blocks in a room
+		forall bel(received(_, color(Room, _,_)), color(Room, BlockID, ColourID)) do delete(color(Room, BlockID, ColourID)).
+		forall bel(received(Robot, color(Room, BlockID, ColourID))) do insert(color(Room, BlockID, ColourID)) + delete(received(Robot, color(Room, BlockID, ColourID))).
+		forall bel(received(Robot, not(color(Room, BlockID, ColourID)))) do delete(color(Room, BlockID, ColourID)) + delete(received(Robot, not(color(Room, BlockID, ColourID)))).
+		
+		% Process update visited rooms
+		forall bel(received(Robot,visited(Place)), unvisited(L), select(Place, L, NewL), L\== NewL) do delete(unvisited(L)) + insert(unvisited(NewL)) + delete(received(Robot,visited(Place))).
 		
 		% Process an update of the holding. Insert if holding, delete if nog holding anymore.
 		if bel(percept(holding(BlockID))) then insert(holding(BlockID)).
