@@ -99,7 +99,7 @@ init module {
 		
 		% The pickUp action makes the agent pick up the block it is currently located at.
 		pickUp {
-            pre { state(arrived), atBlock(BlockID), not(holding(_)), state(arrived) }
+            pre { state(arrived), atBlock(BlockID), not(holding(_))}
 			post { holding(BlockID) }
 		}
 		
